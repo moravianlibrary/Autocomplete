@@ -88,36 +88,11 @@ function extract_value($record, $spec) {
          $results[] = trim($result);
       }
    }
-   /*
-   foreach(split(":", $specs) as $desc) {
-      $matches = array();
-      preg_match("/([0-9]*)([a-zA-Z]*)/S", $desc, &$matches);
-      $field = $matches[1];
-      $subfields = $matches[2];
-      $result = "";
-      for($i=0; $i<strlen($subfields); $i++) {
-         $subfield = $subfields[$i];
-         $field_value = $record->getField($field);
-         if ($field_value) {
-            $sub_field_value = $record->getField($field)->getSubfield($subfield);
-            if ($sub_field_value) {
-               $result .= clean($sub_field_value->getData()) . " ";
-            }
-         }
-      }
-      $result = trim($result);
-      if ($result != "") {
-         $results[] = trim($result);
-      }
-   }
-   */
    return $results;
 }
 
 function clean($text) {
    $text = preg_replace("/(:|;|\/|\.)*$/S", "", $text);
-   //$text = preg_replace("/(/\\;\\=\\:\\. \\])*$", "", $text);
-   //$text = preg_replace("/^[\\[]/", "", $text);
    return $text;
 }
 
