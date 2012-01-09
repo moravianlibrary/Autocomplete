@@ -1,0 +1,6 @@
+<solr persistent="true" sharedLib="lib">
+  <cores adminPath="/admin/multicore">
+    <core name="suggest" instanceDir="suggest"/>
+  </cores>
+</solr>
+
