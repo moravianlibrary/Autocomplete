@@ -6,6 +6,50 @@ $config = parse_ini_file("config.ini", true);
 $parser_settings = array();
 
 function main() {
+   delete_index();
+   index();
+   save_index();
+   optimize_index();
+}
+
+function execute_solr_request($path, $post, $content_type) {
+   global $config;
+   $ch = curl_init();
+   $url = $config['solr']['url'] . $path;
+   curl_setopt($ch, CURLOPT_URL, $url);
+   if ($post != null) {
+      curl_setopt($ch, CURLOPT_POST, true);
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $post); 
+   }
+   if ($content_type != null) {
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: $content_type"));
+   }
+   curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+   $response = curl_exec($ch);
+   if (!$response) {
+     die("Solr request failed (url is $url), make sure solr server is running and correctly set up.\n");
+   }
+   return $response;
+}
+
+function delete_index() {
+   $delete_xml = "<delete><query>*:*</query></delete>";
+   $response = execute_solr_request("/update", $delete_xml, "text/xml");
+}
+
+function save_index() {
+   global $config;
+   $post = array(
+      "file_box" => "@" . $config['output']['file'],
+   );
+   $response = execute_solr_request("/update/csv?commit=true&separator=%7C&fieldnames=count,field,key", $post, null);
+}
+
+function optimize_index() {
+   $response = execute_solr_request("/update?optimize=true", null, null);
+}
+
+function index() {
    global $config;
    global $parser_settings;
    foreach($config["fields"] as $key => $value) {
@@ -20,13 +64,15 @@ function main() {
    foreach($config["files"]["file"] as $file) {
       process_file($summary, $file);
    }
+   $fh = fopen($config['output']['file'], "w");
    foreach($summary as $key => $values) {
       foreach ($values as $keyword => $count) {
          $key = str_replace("|", " ", $key);
          $keyword = str_replace("|", " ", $keyword);
-         print "$count|$key|$keyword\n";
+         fwrite($fh, "$count|$key|$keyword\n");
       }
    }
+   fclose($fh);
 }
 
 function process_file(&$summary, $file) {
@@ -93,6 +139,7 @@ function extract_value($record, $spec) {
 
 function clean($text) {
    $text = preg_replace("/(:|;|\/|\.)*$/S", "", $text);
+   $text = str_replace('"', "", $text);
    return $text;
 }
 
