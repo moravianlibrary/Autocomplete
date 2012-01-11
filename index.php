@@ -5,6 +5,28 @@ require 'File/MARC.php';
 $config = parse_ini_file("config.ini", true);
 $parser_settings = array();
 
+class File_MARC_Record_Fast {
+   protected $fields_hash;
+   protected $record;
+
+   function __construct($record = null) {
+      $record = $record;
+      $fields = $record->getFields();
+      $this->fields_hash = array();
+      foreach ($fields as $field) {
+         $this->fields_hash[$field->getTag()] = $field;
+      }
+   }
+
+   function getField($tag) {
+      if (isset($this->fields_hash[$tag])) {
+         return $this->fields_hash[$tag];
+      } else {
+         return null;
+      }
+   }
+}
+
 function main() {
    delete_index();
    index();
@@ -79,7 +101,8 @@ function process_file(&$summary, $file) {
    $count = 0;
    $records = new File_MARC($file);
    while ($record = $records->next()) {
-      $result = process_record($record);
+      $fast_record = new File_MARC_Record_Fast($record);
+      $result = process_record($fast_record);
       foreach($result as $key => $vals) {
          if (!isset($summary[$key])) {
             $summary[$key] = array();
@@ -123,22 +146,22 @@ function extract_value($record, $spec) {
          $subfield = $subfields[$i];
          $field_value = $record->getField($field);
          if ($field_value) {
-            $sub_field_value = $record->getField($field)->getSubfield($subfield);
+            $sub_field_value = $field_value->getSubfield($subfield);
             if ($sub_field_value) {
-               $result .= clean($sub_field_value->getData()) . " ";
+               $result .= $sub_field_value->getData() . " ";
             }
          }
       }
-      $result = trim($result);
+      $result = trim(clean($result));
       if ($result != "") {
-         $results[] = trim($result);
+         $results[] = $result;
       }
    }
    return $results;
 }
 
 function clean($text) {
-   $text = preg_replace("/(:|;|\/|\.)*$/S", "", $text);
+   $text = preg_replace("/(:|;|\/|\.| )*$/S", "", $text);
    $text = str_replace('"', "", $text);
    return $text;
 }

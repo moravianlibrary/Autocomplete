@@ -1,9 +1,23 @@
 function create_autocomplete(where, select, map, url) {
 	where.autocomplete({
                 source: function(request, response) {
+		  	var fields = null;
 			if (select != null) {
 				selected = select();
+				//window.alert(selected);
 				fields = map[selected];
+			} else {
+				fields = map;
+			}
+			var query = '';
+			var sep = '';
+			if (fields != null) {
+				$(fields).each(function(index) {
+					query+= sep + "(key:" + request.term + " AND field:" + fields[index]+ ")";
+					sep = " OR ";
+				});
+			} else {
+				response([]);
 			}
 			$.ajax({
 				url: url,
@@ -16,7 +30,7 @@ function create_autocomplete(where, select, map, url) {
 					"rows" : "10",
 					"sort" : "count desc",
 					"indent" : "on",
-					"q"  : request.term
+					"q"  : query
 				},
 				success: function(data) {
 					var result = [];
