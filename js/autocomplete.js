@@ -4,7 +4,6 @@ function create_autocomplete(where, select, map, url) {
 		  	var fields = null;
 			if (select != null) {
 				selected = select();
-				//window.alert(selected);
 				fields = map[selected];
 			} else {
 				fields = map;
